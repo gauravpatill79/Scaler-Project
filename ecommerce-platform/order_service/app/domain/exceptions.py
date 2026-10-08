@@ -23,6 +23,13 @@ class InvalidOrderStateTransitionError(DomainError):
         super().__init__(f"Cannot move an order from '{current}' to '{target}'")
 
 
+class UnsupportedPaymentMethodError(DomainError):
+    http_status = 422
+
+    def __init__(self, method: str):
+        super().__init__(f"Payment method '{method}' is not supported")
+
+
 class ProductNotPurchasableError(DomainError):
     http_status = 409
 

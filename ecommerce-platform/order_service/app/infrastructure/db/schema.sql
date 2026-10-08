@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS orders (
                                      NOT NULL DEFAULT 'PENDING_PAYMENT',
     total_amount      DECIMAL(12,2) NOT NULL,
     currency          CHAR(3)       NOT NULL DEFAULT 'INR',
+    payment_method    ENUM('CARD', 'NET_BANKING', 'WALLET', 'UPI') NOT NULL,
     tracking_number   VARCHAR(100)  NULL,
 
     address_line1     VARCHAR(255)  NOT NULL,

@@ -12,8 +12,18 @@ from __future__ import annotations
 import logging
 
 from app.domain.enums import OrderEventType, OrderStatus
-from app.domain.exceptions import EmptyOrderError, OrderNotFoundError, ProductNotPurchasableError
+from app.domain.exceptions import (
+    EmptyOrderError,
+    OrderNotFoundError,
+    ProductNotPurchasableError,
+    UnsupportedPaymentMethodError,
+)
 from app.domain.models import Order, OrderItem, ShippingAddress
+
+# Kept as a plain string set rather than importing Payment Service's enum —
+# the two services stay independently deployable; this is the contract
+# Order Service enforces on its side of the boundary.
+SUPPORTED_PAYMENT_METHODS = {"CARD", "NET_BANKING", "WALLET", "UPI"}
 from app.infrastructure.clients.cart_client import CartServiceClient
 from app.infrastructure.clients.product_catalog_client import ProductCatalogClient
 from app.infrastructure.messaging.event_publisher import EventPublisher, OrderEvent
@@ -47,7 +57,10 @@ class OrderService:
         except Exception:
             logger.exception("Order placed for user %s but Cart Service checkout call failed", user_id)
 
-    def place_order(self, user_id: str, address: ShippingAddress) -> Order:
+    def place_order(self, user_id: str, address: ShippingAddress, payment_method: str) -> Order:
+        if payment_method not in SUPPORTED_PAYMENT_METHODS:
+            raise UnsupportedPaymentMethodError(payment_method)
+
         cart = self._cart_client.get_cart(user_id)
         if not cart.items:
             raise EmptyOrderError(user_id)
@@ -66,7 +79,7 @@ class OrderService:
                 )
             )
 
-        order = Order(user_id=user_id, items=order_items, address=address)
+        order = Order(user_id=user_id, items=order_items, address=address, payment_method=payment_method)
         self._repo.save(order)  # source of truth — if this raises, the request correctly fails
 
         self._safe_cart_checkout(user_id)
@@ -75,7 +88,12 @@ class OrderService:
             OrderEvent(
                 OrderEventType.ORDER_CREATED,
                 order.id,
-                {"user_id": user_id, "total_amount": str(order.total()), "currency": order.currency},
+                {
+                    "user_id": user_id,
+                    "total_amount": str(order.total()),
+                    "currency": order.currency,
+                    "payment_method": payment_method,
+                },
             ),
         )
         return order

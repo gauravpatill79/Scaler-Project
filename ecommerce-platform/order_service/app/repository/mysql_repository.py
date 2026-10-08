@@ -12,12 +12,12 @@ class MySQLOrderRepository(OrderRepository):
 
     def save(self, order: Order, previous_status: OrderStatus | None = None) -> None:
         query = """
-            INSERT INTO orders (id, user_id, status, total_amount, currency, tracking_number,
+            INSERT INTO orders (id, user_id, status, total_amount, currency, payment_method, tracking_number,
                                  address_line1, address_line2, address_city, address_state,
                                  address_postal_code, address_country, created_at, updated_at)
-            VALUES (%(id)s, %(user_id)s, %(status)s, %(total_amount)s, %(currency)s, %(tracking_number)s,
-                    %(line1)s, %(line2)s, %(city)s, %(state)s, %(postal_code)s, %(country)s,
-                    %(created_at)s, %(updated_at)s)
+            VALUES (%(id)s, %(user_id)s, %(status)s, %(total_amount)s, %(currency)s, %(payment_method)s,
+                    %(tracking_number)s, %(line1)s, %(line2)s, %(city)s, %(state)s, %(postal_code)s,
+                    %(country)s, %(created_at)s, %(updated_at)s)
             ON DUPLICATE KEY UPDATE
                 status = VALUES(status), tracking_number = VALUES(tracking_number),
                 updated_at = VALUES(updated_at)
@@ -28,6 +28,7 @@ class MySQLOrderRepository(OrderRepository):
             "status": order.status.value,
             "total_amount": order.total(),
             "currency": order.currency,
+            "payment_method": order.payment_method,
             "tracking_number": order.tracking_number,
             "line1": order.address.line1,
             "line2": order.address.line2,
@@ -86,6 +87,7 @@ class MySQLOrderRepository(OrderRepository):
             user_id=row["user_id"],
             items=items,
             address=address,
+            payment_method=row["payment_method"],
             status=OrderStatus(row["status"]),
             currency=row["currency"],
             tracking_number=row["tracking_number"],

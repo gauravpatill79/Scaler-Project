@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -17,6 +18,7 @@ class ShippingAddressRequest(BaseModel):
 
 class PlaceOrderRequest(BaseModel):
     address: ShippingAddressRequest
+    payment_method: Literal["CARD", "NET_BANKING", "WALLET", "UPI"]
 
 
 class MarkShippedRequest(BaseModel):
@@ -38,6 +40,7 @@ class OrderResponse(BaseModel):
     items: list[OrderItemResponse]
     total_amount: Decimal
     currency: str
+    payment_method: str
     tracking_number: str | None
     created_at: datetime
     updated_at: datetime

@@ -44,6 +44,7 @@ class Order:
     user_id: str
     items: list[OrderItem]
     address: ShippingAddress
+    payment_method: str
     id: str = field(default_factory=_new_id)
     status: OrderStatus = OrderStatus.PENDING_PAYMENT
     currency: str = "INR"

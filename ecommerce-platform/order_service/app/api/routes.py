@@ -33,6 +33,7 @@ def _to_response(order: Order) -> OrderResponse:
         ],
         total_amount=order.total(),
         currency=order.currency,
+        payment_method=order.payment_method,
         tracking_number=order.tracking_number,
         created_at=order.created_at,
         updated_at=order.updated_at,
@@ -43,7 +44,7 @@ def _to_response(order: Order) -> OrderResponse:
 def place_order(user_id: str, req: PlaceOrderRequest, service: OrderService = Depends(get_order_service)):
     address = ShippingAddress(**req.address.model_dump())
     try:
-        order = service.place_order(user_id, address)
+        order = service.place_order(user_id, address, req.payment_method)
     except DomainError as exc:
         raise HTTPException(status_code=exc.http_status, detail=str(exc)) from exc
     return _to_response(order)
